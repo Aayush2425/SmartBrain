@@ -1,26 +1,93 @@
+// import files
 import "./App.css";
 import Navigation from "./Components/Navigation/Navigation";
 import Logo from "./Components/Logo/Logo";
 import ImageLinkForm from "./Components/ImageLinkForm/ImageLinkForm";
+import FaceRecognition from "./Components/FaceRecognition/FaceRecognition";
 import { useCallback } from "react";
 import Particles from "react-particles";
-// import { loadFull } from "tsparticles";
-// if you are going to use `loadFull`, install the "tsparticles" package too.
+import SignIn from "./Components/signin/SignIn";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { loadSlim } from "tsparticles-slim";
 import Rank from "./Components/Rank/Rank";
+import { useState, useEffect } from "react";
+// main app function
 function App() {
+  const [text, setText] = useState("");
+  const [facebox, setFaceBox] = useState("");
+  // calculate face location function
+  const calculateFaceLocation = (data) => {
+    const face = data.outputs[0].data.regions[0].region_info.bounding_box;
+    const image = document.getElementById("inputimage");
+    const width = Number(image.width);
+    const height = Number(image.height);
+    return {
+      leftCol: face.left_col * width,
+      topRow: face.top_row * height,
+      rightCol: width - face.right_col * width,
+      bottomRow: height - face.bottom_row * height,
+    };
+  };
+  // display Face Box function
+  const displayFaceBox = (box) => {
+    console.log(box);
+    setFaceBox(box);
+  };
+
+  function inputChange(e) {
+    setText(e.target.value);
+  }
+
+  const onSubmit = () => {
+    console.log("Click");
+  };
+
+  // api call method
+  const raw = {
+    user_app_id: {
+      user_id: "clarifai",
+      app_id: "main",
+    },
+    inputs: [
+      {
+        data: {
+          image: {
+            url: text,
+          },
+        },
+      },
+    ],
+  };
+
+  const requestOptions = {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      Authorization: "Key 2820acdfae4f4f47bef8526cf6e76dc8",
+    },
+    body: JSON.stringify(raw),
+  };
+
+  useEffect(() => {
+    fetch(
+      "https://api.clarifai.com/v2/models/face-detection/versions/6dc7e46bc9124c5c8824be4822abe105/outputs",
+      requestOptions
+    )
+      .then((response) => response.json())
+      .then((result) => displayFaceBox(calculateFaceLocation(result)))
+      .catch((error) => console.log("error", error));
+  }, [text]);
+
+  // particle js
   const particlesInit = useCallback(async (engine) => {
     console.log(engine);
-    // you can initiate the tsParticles instance (engine) here, adding custom shapes or presets
-    // this loads the tsparticles package bundle, it's the easiest method for getting everything ready
-    // starting from v2 you can add only the features you need reducing the bundle size
-    // await loadFull(engine);
     await loadSlim(engine);
   }, []);
 
   const particlesLoaded = useCallback(async (container) => {
     console.log(container);
   }, []);
+
   return (
     <div className="App">
       <Particles
@@ -43,7 +110,7 @@ function App() {
               },
               onHover: {
                 enable: true,
-                // mode: "repulse",
+                mode: "repulse",
               },
               resize: true,
             },
@@ -98,11 +165,27 @@ function App() {
           detectRetina: true,
         }}
       />
-      <Navigation />
-      <Logo />
-      <Rank />
-      <ImageLinkForm />
-      {/* <FaceRecognition /> */}
+      <BrowserRouter>
+        <Routes>
+          <Route index element={<SignIn />} />
+          <Route
+            path="/home"
+            element={
+              <>
+                <Navigation />
+                <Logo />
+                <Rank />
+                <ImageLinkForm
+                  inputChange={inputChange}
+                  onSubmit={onSubmit}
+                  imgu={text}
+                />
+                <FaceRecognition ibox={facebox} imgUrl={text} />
+              </>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
     </div>
   );
 }

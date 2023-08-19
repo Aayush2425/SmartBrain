@@ -1,0 +1,13 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"type": "npm",
+			"script": "eject",
+			"path": "smartbrain",
+			"problemMatcher": [],
+			"label": "npm: eject - smartbrain",
+			"detail": "react-scripts eject"
+		}
+	]
+}
